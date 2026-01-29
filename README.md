@@ -10,6 +10,7 @@ Local SMTP email verifier. Built to catch **non‑existent mailboxes** without p
 - Concurrency + rate limiting
 - Resume support
 - CSV input/output + summary
+- **Local Web UI** (upload CSV → download results)
 
 ## Install
 ```bash
@@ -18,7 +19,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
+## CLI Usage
 ```bash
 python3 mailverify.py \
   --input leads.csv \
@@ -28,6 +29,12 @@ python3 mailverify.py \
   --per-domain 3 \
   --concurrency 4 \
   --resume
+```
+
+## Web UI
+```bash
+python3 web.py
+# open http://127.0.0.1:8080
 ```
 
 ### Input CSV
