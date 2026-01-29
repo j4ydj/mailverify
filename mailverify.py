@@ -19,7 +19,7 @@ ROLE_ACCOUNTS = {
     "admin","administrator","billing","contact","info","support","sales",
     "help","hello","hi","inquiry","team","office","careers","hr",
     "jobs","press","media","abuse","security","legal","privacy",
-    "accounts","accounting","payments","marketing"
+    "accounts","accounting","payments","marketing","postmaster","webmaster"
 }
 
 DEFAULT_DISPOSABLE = {
@@ -220,7 +220,6 @@ def main():
             status = res.get("status", "unknown")
             summary[status] = summary.get(status, 0) + 1
 
-    # append if resume, else overwrite
     write_results_csv(args.output, results, append=args.resume)
 
     print("Summary:")

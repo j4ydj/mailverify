@@ -5,7 +5,7 @@ import threading
 from datetime import datetime
 from flask import Flask, request, render_template_string, send_file, jsonify
 
-from mailverify import verify_email, read_emails, write_results_csv, load_seen, DEFAULT_DISPOSABLE
+from mailverify import verify_email, read_emails, write_results_csv, DEFAULT_DISPOSABLE
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
