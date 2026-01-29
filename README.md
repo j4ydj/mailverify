@@ -1,13 +1,15 @@
 # mailverify
 
-Local SMTP email verifier. Designed to catch **non-existent mailboxes** without expensive APIs.
+Local SMTP email verifier. Built to catch **non‑existent mailboxes** without paid APIs.
 
-## What it does
-- Syntax check
-- MX lookup
-- SMTP RCPT check (detects non-existent mailboxes)
-- Optional catch-all detection
-- Role account filtering
+## Features
+- Syntax + MX checks
+- SMTP RCPT verification (mailbox exists)
+- Catch‑all detection
+- Disposable + role filtering
+- Concurrency + rate limiting
+- Resume support
+- CSV input/output + summary
 
 ## Install
 ```bash
@@ -18,26 +20,32 @@ pip install -r requirements.txt
 
 ## Usage
 ```bash
-python3 mailverify.py --input leads.csv --output results.csv --catch-all
+python3 mailverify.py \
+  --input leads.csv \
+  --output verified.csv \
+  --catch-all \
+  --rate 1 \
+  --per-domain 3 \
+  --concurrency 4 \
+  --resume
 ```
 
 ### Input CSV
-- If first row has `email` header, it uses that column.
-- Otherwise, it uses the first column.
+- Uses `email` header if present, otherwise first column.
 
 ### Output CSV
-Includes:
+Columns include:
 - `email`
-- `status` (valid, invalid_mailbox, catch_all, role_account, no_mx, invalid_syntax, unknown)
-- `mx` (if available)
-- `detail` (SMTP response or error)
+- `status` (valid, invalid_mailbox, catch_all, role_account, disposable_domain, no_mx, invalid_syntax, unknown)
+- `mx`
+- `detail` (SMTP response/error)
 
 ## Notes
-SMTP verification can be throttled or blocked by some mail servers. Use `--sleep` to slow down if needed.
+- 1/sec global rate is safest for avoiding blocks.
+- `--per-domain` throttles per domain to reduce server bans.
+- Some servers always return `unknown` or block SMTP checks.
 
-Default MAIL FROM is `verify@localhost`. You can override with `--from`.
-
-## Example
+## Example (safe settings)
 ```bash
-python3 mailverify.py --input leads.csv --output verified.csv --catch-all --sleep 1
+python3 mailverify.py --input leads.csv --output verified.csv --rate 1 --per-domain 3 --resume
 ```
