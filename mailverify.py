@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import csv
-import json
 import os
 import random
 import re
@@ -162,19 +161,6 @@ def load_seen(output: str) -> Set[str]:
     return seen
 
 
-def write_results_csv(path: str, results: List[Dict[str, str]], append: bool=False):
-    fieldnames = sorted({k for r in results for k in r.keys()})
-    if "email" in fieldnames:
-        fieldnames = ["email"] + [f for f in fieldnames if f != "email"]
-    mode = "a" if append and os.path.exists(path) else "w"
-    with open(path, mode, newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        if mode == "w":
-            writer.writeheader()
-        for r in results:
-            writer.writerow(r)
-
-
 def main():
     p = argparse.ArgumentParser(description="Local SMTP email verifier")
     p.add_argument("--input", required=True, help="Input CSV file (first column or 'email' header)")
@@ -201,31 +187,43 @@ def main():
                 if d:
                     disposable.add(d)
 
-    results = []
+    fieldnames = ["email","status","mx","detail"]
+    mode = "a" if args.resume and os.path.exists(args.output) else "w"
+    out = open(args.output, mode, newline="", encoding="utf-8")
+    writer = csv.DictWriter(out, fieldnames=fieldnames)
+    if mode == "w":
+        writer.writeheader()
+
+    lock = threading.Lock()
     summary = {
         "valid":0,"invalid_mailbox":0,"catch_all":0,"role_account":0,
         "disposable_domain":0,"no_mx":0,"invalid_syntax":0,"unknown":0
     }
 
     def task(email):
-        res = verify_email(email, args.mail_from, args.timeout, args.catch_all,
-                           args.rate, args.per_domain, disposable)
-        return res
+        return verify_email(email, args.mail_from, args.timeout, args.catch_all,
+                            args.rate, args.per_domain, disposable)
 
     with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
         futures = {ex.submit(task, e): e for e in emails}
         for fut in as_completed(futures):
             res = fut.result()
-            results.append(res)
+            with lock:
+                writer.writerow({
+                    "email": res.get("email",""),
+                    "status": res.get("status",""),
+                    "mx": res.get("mx",""),
+                    "detail": res.get("detail",""),
+                })
+                out.flush()
             status = res.get("status", "unknown")
             summary[status] = summary.get(status, 0) + 1
 
-    write_results_csv(args.output, results, append=args.resume)
-
+    out.close()
     print("Summary:")
     for k, v in summary.items():
         print(f"{k}: {v}")
-    print(f"Done. {len(results)} emails processed.")
+    print(f"Done. {len(emails)} emails processed.")
 
 
 if __name__ == "__main__":
